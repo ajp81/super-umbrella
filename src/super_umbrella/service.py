@@ -7,20 +7,20 @@ import time
 
 from .config import Settings
 from .engine import IntelligenceEngine
-from .models import PromptRequest, ServiceResult, _SafeDict
+from .models import PromptRequest, ServiceResult
 from .providers import get_provider_for_settings
 
 
 class ServiceError(RuntimeError):
-    """Base exception for service-layer failures."""
+    """Base exception for service-level failures."""
 
 
 class PromptValidationError(ServiceError, ValueError):
-    """Raised when a prompt is empty or otherwise invalid."""
+    """Raised when a prompt is missing or invalid."""
 
 
 class TemplateValidationError(ServiceError, ValueError):
-    """Raised when a template is malformed or variables are missing."""
+    """Raised when a template is malformed or contains missing variables."""
 
 
 class ProviderError(ServiceError):
@@ -43,6 +43,7 @@ class IntelligenceService:
     def _normalize_metadata(metadata: dict[str, str] | None) -> dict[str, str]:
         if metadata is None:
             return {}
+
         if not isinstance(metadata, dict):
             raise TypeError("metadata must be a dictionary of string keys and values.")
 
@@ -50,21 +51,31 @@ class IntelligenceService:
         for key, value in metadata.items():
             key_text = str(key)
             value_text = str(value)
+
             if len(key_text) > 128:
                 raise ValueError("metadata keys must be 128 characters or shorter.")
             if len(value_text) > 2048:
                 raise ValueError("metadata values must be 2048 characters or shorter.")
+
             normalized[key_text] = value_text
+
         return normalized
 
     @staticmethod
-    def _render_template(prompt: str, template: str | None, variables: dict[str, str] | None) -> str:
+    def _render_template(
+        prompt: str,
+        template: str | None,
+        variables: dict[str, str] | None,
+    ) -> str:
         if template is None:
             return prompt
+
         if not isinstance(template, str):
             raise TypeError("template must be a string or None.")
+
         if variables is None:
             variables = {}
+
         if not isinstance(variables, dict):
             raise TypeError("variables must be a dictionary of string keys and values.")
 
@@ -74,13 +85,19 @@ class IntelligenceService:
             for _, field_name, _, _ in formatter.parse(template)
             if field_name is not None
         }
+
         missing = sorted(field for field in placeholders if field not in variables)
         if missing:
             raise TemplateValidationError(
                 "Missing template variables: " + ", ".join(missing)
             )
 
-        return template.format_map(_SafeDict(variables))
+        try:
+            rendered = template.format_map({str(k): str(v) for k, v in variables.items()})
+        except (KeyError, IndexError, ValueError) as exc:
+            raise TemplateValidationError("Template could not be rendered.") from exc
+
+        return rendered
 
     def ask(
         self,

@@ -4,7 +4,12 @@ from super_umbrella.config import Settings
 from super_umbrella.engine import IntelligenceEngine
 from super_umbrella.models import PromptRequest
 from super_umbrella.providers import DemoProvider, get_provider_for_settings
-from super_umbrella.service import IntelligenceService
+from super_umbrella.service import (
+    IntelligenceService,
+    PromptValidationError,
+    ProviderError,
+    TemplateValidationError,
+)
 
 
 class RecordingProvider:
@@ -45,11 +50,45 @@ class IntelligenceEngineTests(unittest.TestCase):
 
         result = service.ask("  hello  ", metadata={"source": "unit-test"})
 
-        self.assertEqual(result.request, PromptRequest(text="hello", metadata={"source": "unit-test"}))
+        self.assertEqual(
+            result.request,
+            PromptRequest(text="hello", metadata={"source": "unit-test"}),
+        )
         self.assertEqual(result.text, "test-response")
         self.assertEqual(result.provider, "demo")
         self.assertIsInstance(result.latency_ms, int)
         self.assertTrue(result.latency_ms >= 0)
+
+    def test_service_rejects_empty_prompt(self) -> None:
+        service = IntelligenceService(
+            provider=RecordingProvider(),
+            settings=Settings(provider="demo"),
+        )
+
+        with self.assertRaises(PromptValidationError):
+            service.ask("   ")
+
+    def test_service_rejects_missing_template_variables(self) -> None:
+        service = IntelligenceService(
+            provider=RecordingProvider(),
+            settings=Settings(provider="demo"),
+        )
+
+        with self.assertRaises(TemplateValidationError):
+            service.ask("ignored", template="Hello {name}", variables={})
+
+    def test_service_wraps_provider_errors(self) -> None:
+        class FailingProvider:
+            def generate(self, prompt: str) -> str:
+                raise RuntimeError("backend exploded")
+
+        service = IntelligenceService(
+            provider=FailingProvider(),
+            settings=Settings(provider="demo"),
+        )
+
+        with self.assertRaises(ProviderError):
+            service.ask("hello")
 
     def test_service_supports_templates_and_formatting(self) -> None:
         service = IntelligenceService(
@@ -66,7 +105,10 @@ class IntelligenceEngineTests(unittest.TestCase):
 
         self.assertEqual(result.request.text, "Say hello to team")
         self.assertEqual(result.request.template, "Say hello to {audience}")
-        self.assertEqual(result.format(), "[demo] Say hello to {audience}: test-response")
+        self.assertEqual(
+            result.format(),
+            "[demo] Say hello to {audience}: test-response",
+        )
 
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
-"""Local demonstration provider; deliberately does not pretend to be AI."""
+"""Demo provider implementation used during early project scaffolding."""
 
 
 class DemoProvider:
-    """Return a placeholder response without network or model access."""
+    """A deterministic placeholder provider for local validation and wire-up checks."""
 
     def generate(self, prompt: str) -> str:
         return (
-            "Demo mode: no AI model is configured. "
-            f"Received {len(prompt)} characters of input."
+            "Demo provider mode: no production AI backend is configured. "
+            f"Received {len(prompt)} characters of prompt input."
         )

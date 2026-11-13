@@ -9,20 +9,23 @@ class RecordingProvider:
 
     def generate(self, prompt: str) -> str:
         self.prompts.append(prompt)
-        return "test response"
+        return "test-response"
 
 
 class IntelligenceEngineTests(unittest.TestCase):
-    def test_strips_prompt_and_returns_provider_response(self) -> None:
+    def test_ask_strips_prompt_and_returns_provider_result(self) -> None:
         provider = RecordingProvider()
-        response = IntelligenceEngine(provider).ask("  hello  ")
-        self.assertEqual(provider.prompts, ["hello"])
-        self.assertEqual(response.text, "test response")
+        response = IntelligenceEngine(provider).ask("  hello world  ")
 
-    def test_rejects_empty_prompt_without_calling_provider(self) -> None:
+        self.assertEqual(provider.prompts, ["hello world"])
+        self.assertEqual(response.text, "test-response")
+
+    def test_ask_rejects_empty_prompt(self) -> None:
         provider = RecordingProvider()
+
         with self.assertRaises(ValueError):
-            IntelligenceEngine(provider).ask(" \n ")
+            IntelligenceEngine(provider).ask("   \n  ")
+
         self.assertEqual(provider.prompts, [])
 
 

@@ -1,4 +1,4 @@
-"""Command-line entry point."""
+"""CLI for the super-umbrella scaffold."""
 
 import argparse
 
@@ -9,9 +9,9 @@ from .providers import DemoProvider
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="super-umbrella",
-        description="AI-assisted intelligence app scaffold (demo provider only).",
+        description="Provider-agnostic AI application scaffold",
     )
-    parser.add_argument("prompt", help="Text to pass to the configured provider")
+    parser.add_argument("prompt", help="Prompt to send to the configured provider")
     args = parser.parse_args()
 
     engine = IntelligenceEngine(provider=DemoProvider())

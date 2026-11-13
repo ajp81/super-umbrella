@@ -1,4 +1,4 @@
-"""Core orchestration contracts; provider implementations live separately."""
+"""Core orchestration for the super-umbrella intelligence engine."""
 
 from dataclasses import dataclass
 from typing import Protocol
@@ -6,21 +6,21 @@ from typing import Protocol
 
 @dataclass(frozen=True)
 class ServiceResponse:
-    """A response from a configured provider."""
+    """A normalized response returned by a provider."""
 
     text: str
 
 
 class Provider(Protocol):
-    """Minimal interface implemented by a model or test provider."""
+    """The minimal contract expected from a model or service provider."""
 
     def generate(self, prompt: str) -> str:
-        """Generate a response for prompt."""
+        """Return a textual response for the given prompt."""
         ...
 
 
 class IntelligenceEngine:
-    """Validate input and delegate generation to an injected provider."""
+    """Validate prompts and delegate execution to a provider."""
 
     def __init__(self, provider: Provider) -> None:
         self._provider = provider

@@ -1,4 +1,4 @@
-"""Support `python -m super_umbrella`."""
+"""Command-line entry point for the super-umbrella package."""
 
 from .cli import main
 

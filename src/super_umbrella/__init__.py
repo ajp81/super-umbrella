@@ -1,4 +1,4 @@
-"""Provider-agnostic foundation for super-umbrella."""
+"""Core package exports for super-umbrella."""
 
 from .engine import IntelligenceEngine, Provider, ServiceResponse
 

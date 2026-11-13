@@ -1,12 +1,27 @@
 # Roadmap
 
-This roadmap is intentionally small until the product use case is known.
+## Phase 1
 
-1. **Define the use case:** identify users, supported tasks, and what “intelligence” means for this project.
-2. **Set data boundaries:** decide what data may be processed, whether it can leave the machine, and how long it may be retained.
-3. **Choose a model/provider:** compare quality, privacy, latency, cost, and licensing; document the choice before adding an integration.
-4. **Implement a bounded provider:** add configuration, timeouts, error handling, and mocked tests. Keep the demo provider available for local wiring checks.
-5. **Evaluate quality and safety:** create representative test cases, measure failures, and require human oversight for high-impact output.
-6. **Add persistence or retrieval only if needed:** define access control, deletion, and data lifecycle first.
+- Establish the package structure.
+- Define the provider interface and engine contract.
+- Create a working CLI.
+- Add test coverage for validation and core behavior.
+- Document architecture and future directions.
 
-No model, database, external API, or autonomous tool execution is enabled by this scaffold.
+## Phase 2
+
+- Add a real model provider integration.
+- Support environment-based configuration and secrets handling.
+- Add prompt templates and response formatting.
+- Introduce structured logging and observability.
+
+## Phase 3
+
+- Add retrieval, memory, or agent capabilities if needed.
+- Define data boundaries, privacy controls, and retention rules.
+- Add more advanced UX and operational safeguards.
+
+## Phase 4
+
+- Add deployment, monitoring, and production readiness checks.
+- Review cost, safety, and governance requirements before exposing the application to users.

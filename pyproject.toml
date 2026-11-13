@@ -15,5 +15,8 @@ dependencies = []
 [project.scripts]
 super-umbrella = "super_umbrella.cli:main"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
 where = ["src"]

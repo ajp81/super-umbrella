@@ -1,26 +1,25 @@
 # Architecture
 
-## Current design
+## Objectives
 
-The package uses a small provider boundary:
+The architecture is intentionally simple in Phase 1. It separates the orchestration layer from the provider layer so the project can evolve without a hard dependency on a specific AI vendor.
 
-1. The CLI accepts a prompt.
-2. `IntelligenceEngine` validates it and calls an injected `Provider`.
-3. The provider returns text, wrapped as a `ServiceResponse`.
+## Flow
 
-The included `DemoProvider` is deterministic placeholder behavior. It makes no network requests and is not an AI model. Tests inject a tiny fake provider so core behavior can be checked without credentials, network access, or model-specific dependencies.
+1. The CLI receives a prompt from the user.
+2. `IntelligenceEngine` validates the prompt.
+3. The engine calls a `Provider` implementation.
+4. The provider returns a plain string.
+5. The final result is wrapped as `ServiceResponse` and returned to the caller.
 
-## Integration principles
+## Design principles
 
-When adding a real model provider:
+- Keep the core engine generic and testable.
+- Hide model vendor details behind a provider interface.
+- Avoid reading secrets from source control.
+- Keep remote API calls explicit and isolated.
+- Add environment-based configuration later as the app grows.
 
-- Keep vendor SDK code inside a separate provider module; keep the engine provider-agnostic.
-- Read credentials from environment or a secret manager, never source control or command-line arguments.
-- Make network use explicit, set timeouts, and handle provider errors without exposing secrets.
-- Document data sent to the provider, retention implications, cost controls, and configuration.
-- Treat model output as untrusted input. Validate structured output before downstream use, and require human review for consequential actions.
-- Add unit tests with mocked provider behavior; keep live API tests opt-in.
+## Current implementation
 
-## Not implemented
-
-There is no model integration, retrieval pipeline, persistence, agent loop, autonomous action, or domain-specific intelligence yet. These should only be added after the project’s use case and data boundaries are defined.
+The repo ships with a `DemoProvider` only. It is not an actual model and should not be used for production intelligence workflows. It exists to verify package wiring and to give the project a safe default behavior while the real provider layer is being designed.

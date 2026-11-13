@@ -40,6 +40,7 @@ class ServiceResult:
     template: str | None = None
     latency_ms: int | None = None
     status: str = "ok"
+    request_id: str | None = None
 
     def format(self) -> str:
         """Render a compact, human-readable version of the result."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import urllib.request
+from urllib.parse import urlparse
 
 from .config import Settings
 
@@ -16,6 +17,9 @@ class DemoProvider:
             "Demo provider mode: no production AI backend is configured. "
             f"Received {len(prompt)} characters of prompt input."
         )
+
+    def health_check(self, timeout: float = 2.0) -> bool:
+        return True
 
 
 class OpenAIProvider:
@@ -48,11 +52,22 @@ class OpenAIProvider:
         )
         return content.strip() or "OpenAI provider returned an empty response."
 
+    def health_check(self, timeout: float = 2.0) -> bool:
+        """Check local configuration only; avoids a paid/network API request."""
+        if not self.api_key or not self.api_key.strip():
+            raise ValueError("OPENAI_API_KEY must be set when using the OpenAI provider.")
+        if not self.model or not self.model.strip():
+            raise ValueError("An OpenAI model must be configured.")
+        return True
+
 
 class OllamaProvider:
     """Provider adapter for a local Ollama server."""
 
     def __init__(self, model: str, base_url: str = "http://localhost:11434") -> None:
+        parsed = urlparse(base_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("OLLAMA_BASE_URL must be an absolute HTTP(S) URL.")
         self.model = model
         self.base_url = base_url.rstrip("/")
 
@@ -76,6 +91,12 @@ class OllamaProvider:
         if not isinstance(result, str):
             raise ValueError("Unexpected response payload from Ollama provider.")
         return result.strip() or "Ollama provider returned an empty response."
+
+    def health_check(self, timeout: float = 2.0) -> bool:
+        """Check whether the configured Ollama server responds to its tags endpoint."""
+        request = urllib.request.Request(f"{self.base_url}/api/tags", method="GET")
+        with urllib.request.urlopen(request, timeout=timeout):
+            return True
 
 
 def get_provider_for_settings(settings: Settings):

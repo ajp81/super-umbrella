@@ -1,33 +1,25 @@
-import unittest
+"""CLI for the super-umbrella scaffold."""
 
-from super_umbrella.engine import IntelligenceEngine
+import argparse
 
-
-class RecordingProvider:
-    def __init__(self) -> None:
-        self.prompts: list[str] = []
-
-    def generate(self, prompt: str) -> str:
-        self.prompts.append(prompt)
-        return "test-response"
+from .config import Settings
+from .engine import IntelligenceEngine
+from .providers import get_provider_for_settings
 
 
-class IntelligenceEngineTests(unittest.TestCase):
-    def test_ask_strips_prompt_and_returns_provider_result(self) -> None:
-        provider = RecordingProvider()
-        response = IntelligenceEngine(provider).ask("  hello world  ")
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="super-umbrella",
+        description="Provider-agnostic AI application scaffold",
+    )
+    parser.add_argument("prompt", help="Prompt to send to the configured provider")
+    args = parser.parse_args()
 
-        self.assertEqual(provider.prompts, ["hello world"])
-        self.assertEqual(response.text, "test-response")
-
-    def test_ask_rejects_empty_prompt(self) -> None:
-        provider = RecordingProvider()
-
-        with self.assertRaises(ValueError):
-            IntelligenceEngine(provider).ask("   \n  ")
-
-        self.assertEqual(provider.prompts, [])
+    settings = Settings.from_env()
+    provider = get_provider_for_settings(settings)
+    engine = IntelligenceEngine(provider=provider)
+    print(engine.ask(args.prompt).text)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

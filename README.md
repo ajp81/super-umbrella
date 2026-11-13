@@ -2,22 +2,48 @@
 
 `super-umbrella` is a Python-based foundation for an AI-assisted intelligence application. The project is intentionally provider-agnostic: the execution layer is separated from model/provider implementations so real model integrations can be added without coupling core logic to a single vendor.
 
-This repository is in Phase 1 of the project plan. The goal of this phase is to establish a clean package structure, a provider contract, a minimal CLI, and a testable core workflow.
+This repository is in Phase 2 of the project plan. The foundation is in place, and the project now supports environment-based provider configuration with optional real model backends.
 
 ## Status
 
-- Phase: 1 / foundation
+- Phase: 2 / provider integration
 - Runtime: Python 3.11+
-- Model integrations: none yet
-- Default behavior: demo provider only
+- Default behavior: demo provider
+- Optional integrations: OpenAI and local Ollama
 
 ## Quick start
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -e .
+python -m pip install -e ".[llm]"
+cp .env.example .env
 python -m super_umbrella "Summarize the purpose of this project"
+```
+
+If you do not configure a real provider, the app continues to use the built-in demo provider.
+
+## Provider configuration
+
+The repository reads provider settings from environment variables. Copy `.env.example` and update it for your target backend.
+
+Supported values:
+
+- `SUPER_UMBRELLA_PROVIDER=demo`
+- `SUPER_UMBRELLA_PROVIDER=openai`
+- `SUPER_UMBRELLA_PROVIDER=ollama`
+
+Environment keys:
+
+```bash
+SUPER_UMBRELLA_PROVIDER=openai
+OPENAI_API_KEY=your-key
+OPENAI_MODEL=gpt-4o-mini
+
+# or
+SUPER_UMBRELLA_PROVIDER=ollama
+OLLAMA_MODEL=llama3.1
+OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ## Project structure
@@ -29,11 +55,13 @@ super-umbrella/
 ├── README.md
 ├── pyproject.toml
 ├── .gitignore
+├── .env.example
 ├── src/
 │   └── super_umbrella/
 │       ├── __init__.py
 │       ├── __main__.py
 │       ├── cli.py
+│       ├── config.py
 │       ├── engine.py
 │       └── providers.py
 ├── tests/
@@ -43,14 +71,6 @@ super-umbrella/
 │   └── roadmap.md
 └── .venv/
 ```
-
-## Why this structure
-
-- `engine.py` contains the orchestration and validation logic.
-- `providers.py` defines a local demo provider and leaves room for future OpenAI, Azure, Ollama, or custom providers.
-- `cli.py` exposes a minimal command-line interface.
-- `tests/` verifies the core behavior without an external dependency.
-- `docs/` captures architecture decisions and roadmap plans.
 
 ## Development
 

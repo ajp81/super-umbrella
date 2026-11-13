@@ -48,6 +48,25 @@ class IntelligenceEngineTests(unittest.TestCase):
         self.assertEqual(result.request, PromptRequest(text="hello", metadata={"source": "unit-test"}))
         self.assertEqual(result.text, "test-response")
         self.assertEqual(result.provider, "demo")
+        self.assertIsInstance(result.latency_ms, int)
+        self.assertTrue(result.latency_ms >= 0)
+
+    def test_service_supports_templates_and_formatting(self) -> None:
+        service = IntelligenceService(
+            provider=RecordingProvider(),
+            settings=Settings(provider="demo"),
+        )
+
+        result = service.ask(
+            "hello",
+            metadata={"source": "unit-test"},
+            template="Say hello to {audience}",
+            variables={"audience": "team"},
+        )
+
+        self.assertEqual(result.request.text, "Say hello to team")
+        self.assertEqual(result.request.template, "Say hello to {audience}")
+        self.assertEqual(result.format(), "[demo] Say hello to {audience}: test-response")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "super-umbrella"
+version = "0.1.0"
+description = "Provider-agnostic scaffold for an AI-assisted intelligence application"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "ajp81" }]
+dependencies = []
+
+[project.scripts]
+super-umbrella = "super_umbrella.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

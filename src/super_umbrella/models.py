@@ -3,13 +3,6 @@
 from dataclasses import dataclass, field
 
 
-class _SafeDict(dict):
-    """A dictionary that returns an empty string for missing template keys."""
-
-    def __missing__(self, key: str) -> str:
-        return ""
-
-
 @dataclass(frozen=True)
 class PromptRequest:
     """A normalized prompt payload."""

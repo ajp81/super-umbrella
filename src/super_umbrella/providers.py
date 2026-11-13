@@ -1,4 +1,11 @@
-"""Demo provider implementation used during early project scaffolding."""
+"""Provider implementations and settings-based provider selection."""
+
+from __future__ import annotations
+
+import json
+import urllib.request
+
+from .config import Settings
 
 
 class DemoProvider:
@@ -9,3 +16,87 @@ class DemoProvider:
             "Demo provider mode: no production AI backend is configured. "
             f"Received {len(prompt)} characters of prompt input."
         )
+
+
+class OpenAIProvider:
+    """Thin OpenAI-backed provider adapter."""
+
+    def __init__(self, model: str, api_key: str | None = None) -> None:
+        self.model = model
+        self.api_key = api_key
+
+    def generate(self, prompt: str) -> str:
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY must be set when using the OpenAI provider.")
+
+        try:
+            from openai import OpenAI
+        except ImportError as exc:  # pragma: no cover - dependency guard
+            raise RuntimeError(
+                "The OpenAI provider requires the optional 'llm' dependencies. "
+                "Install with: pip install -e '.[llm]'"
+            ) from exc
+
+        client = OpenAI(api_key=self.api_key)
+        completion = client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        message = completion.choices[0].message
+        content = message.content if isinstance(message.content, str) else "".join(
+            part for part in message.content if isinstance(part, str)
+        )
+        return content.strip() or "OpenAI provider returned an empty response."
+
+
+class OllamaProvider:
+    """Provider adapter for a local Ollama server."""
+
+    def __init__(self, model: str, base_url: str = "http://localhost:11434") -> None:
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+
+    def generate(self, prompt: str) -> str:
+        url = f"{self.base_url}/api/generate"
+        payload = json.dumps({"model": self.model, "prompt": prompt, "stream": False}).encode(
+            "utf-8"
+        )
+        request = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            body = response.read().decode("utf-8")
+
+        data = json.loads(body)
+        result = data.get("response", "")
+        if not isinstance(result, str):
+            raise ValueError("Unexpected response payload from Ollama provider.")
+        return result.strip() or "Ollama provider returned an empty response."
+
+
+def get_provider_for_settings(settings: Settings):
+    """Instantiate the provider configured for the current runtime settings."""
+    provider_name = (settings.provider or "demo").lower()
+
+    if provider_name == "demo":
+        return DemoProvider()
+    if provider_name == "openai":
+        return OpenAIProvider(model=settings.openai_model, api_key=settings.openai_api_key)
+    if provider_name == "ollama":
+        return OllamaProvider(model=settings.ollama_model, base_url=settings.ollama_base_url)
+
+    raise ValueError(
+        f"Unsupported provider '{settings.provider}'. Supported values: demo, openai, ollama."
+    )
+
+
+__all__ = [
+    "DemoProvider",
+    "OpenAIProvider",
+    "OllamaProvider",
+    "get_provider_for_settings",
+]

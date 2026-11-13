@@ -2,11 +2,11 @@
 
 `super-umbrella` is a Python-based foundation for an AI-assisted intelligence application. The project is intentionally provider-agnostic: the execution layer is separated from model/provider implementations so real model integrations can be added without coupling core logic to a single vendor.
 
-This repository is in Phase 2 of the project plan. The foundation is in place, and the project now supports environment-based provider configuration with optional real model backends.
+This repository is in Phase 2.1 of the project plan. The foundation is stable, and the service layer now exposes a structured request/response model for clean application integration.
 
 ## Status
 
-- Phase: 2 / provider integration
+- Phase: 2.1 / service abstraction
 - Runtime: Python 3.11+
 - Default behavior: demo provider
 - Optional integrations: OpenAI and local Ollama
@@ -21,7 +21,17 @@ cp .env.example .env
 python -m super_umbrella "Summarize the purpose of this project"
 ```
 
-If you do not configure a real provider, the app continues to use the built-in demo provider.
+## Service layer
+
+The project now includes a small `IntelligenceService` facade that wraps provider selection, validation, and structured result shaping. This keeps the runtime configuration decoupled from the engine logic.
+
+```python
+from super_umbrella.service import IntelligenceService
+
+service = IntelligenceService()
+result = service.ask("Explain the project purpose")
+print(result.text)
+```
 
 ## Provider configuration
 
@@ -32,53 +42,6 @@ Supported values:
 - `SUPER_UMBRELLA_PROVIDER=demo`
 - `SUPER_UMBRELLA_PROVIDER=openai`
 - `SUPER_UMBRELLA_PROVIDER=ollama`
-
-Environment keys:
-
-```bash
-SUPER_UMBRELLA_PROVIDER=openai
-OPENAI_API_KEY=your-key
-OPENAI_MODEL=gpt-4o-mini
-
-# or
-SUPER_UMBRELLA_PROVIDER=ollama
-OLLAMA_MODEL=llama3.1
-OLLAMA_BASE_URL=http://localhost:11434
-```
-
-## Project structure
-
-```text
-super-umbrella/
-├── LICENSE
-├── CONTRIBUTING.md
-├── README.md
-├── pyproject.toml
-├── .gitignore
-├── .env.example
-├── src/
-│   └── super_umbrella/
-│       ├── __init__.py
-│       ├── __main__.py
-│       ├── cli.py
-│       ├── config.py
-│       ├── engine.py
-│       └── providers.py
-├── tests/
-│   └── test_engine.py
-├── docs/
-│   ├── architecture.md
-│   └── roadmap.md
-└── .venv/
-```
-
-## Development
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-See [docs/architecture.md](docs/architecture.md) and [docs/roadmap.md](docs/roadmap.md) for the technical plan.
 
 ## License
 

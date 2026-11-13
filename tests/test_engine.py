@@ -1,25 +1,54 @@
-"""CLI for the super-umbrella scaffold."""
+import unittest
 
-import argparse
+from super_umbrella.config import Settings
+from super_umbrella.engine import IntelligenceEngine
+from super_umbrella.models import PromptRequest
+from super_umbrella.providers import DemoProvider, get_provider_for_settings
+from super_umbrella.service import IntelligenceService
 
-from .config import Settings
-from .engine import IntelligenceEngine
-from .providers import get_provider_for_settings
+
+class RecordingProvider:
+    def __init__(self) -> None:
+        self.prompts: list[str] = []
+
+    def generate(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        return "test-response"
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="super-umbrella",
-        description="Provider-agnostic AI application scaffold",
-    )
-    parser.add_argument("prompt", help="Prompt to send to the configured provider")
-    args = parser.parse_args()
+class IntelligenceEngineTests(unittest.TestCase):
+    def test_ask_strips_prompt_and_returns_provider_result(self) -> None:
+        provider = RecordingProvider()
+        response = IntelligenceEngine(provider).ask("  hello world  ")
 
-    settings = Settings.from_env()
-    provider = get_provider_for_settings(settings)
-    engine = IntelligenceEngine(provider=provider)
-    print(engine.ask(args.prompt).text)
+        self.assertEqual(provider.prompts, ["hello world"])
+        self.assertEqual(response.text, "test-response")
+
+    def test_ask_rejects_empty_prompt(self) -> None:
+        provider = RecordingProvider()
+
+        with self.assertRaises(ValueError):
+            IntelligenceEngine(provider).ask("   \n  ")
+
+        self.assertEqual(provider.prompts, [])
+
+    def test_defaults_to_demo_provider(self) -> None:
+        settings = Settings.from_env()
+        provider = get_provider_for_settings(settings)
+        self.assertIsInstance(provider, DemoProvider)
+
+    def test_service_builds_structured_result(self) -> None:
+        service = IntelligenceService(
+            provider=RecordingProvider(),
+            settings=Settings(provider="demo"),
+        )
+
+        result = service.ask("  hello  ", metadata={"source": "unit-test"})
+
+        self.assertEqual(result.request, PromptRequest(text="hello", metadata={"source": "unit-test"}))
+        self.assertEqual(result.text, "test-response")
+        self.assertEqual(result.provider, "demo")
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()
